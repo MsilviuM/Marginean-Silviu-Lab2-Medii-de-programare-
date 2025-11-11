@@ -22,6 +22,9 @@ namespace Marginean_Silviu_Lab2.Models
 
         public int? AuthorID { get; set; }  // cheie străină
         public Author? Author { get; set; } // navigation property
+
+        public ICollection<Borrowing>? Borrowings { get; set; }
+        public ICollection<BookCategory>? BookCategories { get; set; }
     } 
 }
 

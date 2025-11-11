@@ -1,6 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Marginean_Silviu_Lab2.Data;
+using Microsoft.AspNetCore.Identity;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -8,6 +9,14 @@ builder.Services.AddRazorPages();
 builder.Services.AddDbContext<Marginean_Silviu_Lab2Context>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("Marginean_Silviu_Lab2Context") ?? throw new InvalidOperationException("Connection string 'Marginean_Silviu_Lab2Context' not found.")));
 
+builder.Services.AddDbContext<LibraryIdentityContext>(options =>
+
+options.UseSqlServer(builder.Configuration.GetConnectionString("LibraryIdentityContextConnection") ?? throw new InvalidOperationException("Connection string 'LibraryIdentityContextConnection' not found.")));
+
+
+//builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true).AddEntityFrameworkStores<LibraryIdentityContext>();
+
+builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = false).AddEntityFrameworkStores<LibraryIdentityContext>(); // asta am modificat
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -22,6 +31,8 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+
+app.UseAuthentication(); // asta am adaugat
 
 app.UseAuthorization();
 

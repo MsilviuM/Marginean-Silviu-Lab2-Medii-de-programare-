@@ -1,4 +1,6 @@
-﻿namespace Marginean_Silviu_Lab2.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Marginean_Silviu_Lab2.Models
 {
     public class Author
     {
@@ -6,7 +8,14 @@
         public string FirstName { get; set; }
         public string LastName { get; set; }
 
-        // Navigation property: un autor poate avea mai multe cărți
+        [Display(Name = "Full Name")]
+        public string FullName
+        {
+            get
+            {
+                return FirstName + " " + LastName;
+            }
+        }
         public ICollection<Book>? Books { get; set; }
     }
 }

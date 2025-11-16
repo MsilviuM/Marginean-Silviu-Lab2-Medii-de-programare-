@@ -71,14 +71,16 @@
 
 
 
+using Marginean_Silviu_Lab2.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Marginean_Silviu_Lab2.Models;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace Marginean_Silviu_Lab2.Pages.Books
 {
+    [Authorize(Roles = "Admin")]
     public class CreateModel : BookCategoriesPageModel
     {
         private readonly Marginean_Silviu_Lab2.Data.Marginean_Silviu_Lab2Context _context;

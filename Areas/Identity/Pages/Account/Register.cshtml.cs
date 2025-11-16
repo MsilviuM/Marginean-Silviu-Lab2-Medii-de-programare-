@@ -255,76 +255,151 @@ _context;
         //}
 
 
-        public async Task<IActionResult> OnPostAsync(string returnUrl = null)
+        //public async Task<IActionResult> OnPostAsync(string returnUrl = null)
+        //{
+        //    returnUrl ??= Url.Content("~/"); // 353
+
+        //    ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList(); // 352
+
+        //    var user = CreateUser(); // 354
+
+        //    await _userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None); // 355, 356
+        //    await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None); // 357, 358
+
+        //    var result = await _userManager.CreateAsync(user, Input.Password); // 359, 360
+
+        //    Member.Email = Input.Email; // 361
+        //    _context.Member.Add(Member); // 362
+        //    await _context.SaveChangesAsync(); // 363
+
+        //    if (result.Succeeded) // 364
+        //    {
+        //        _logger.LogInformation("User created a new account with password."); // 367
+
+        //        var role = await _userManager.AddToRoleAsync(user, "User");
+        //        var userId = await _userManager.GetUserIdAsync(user); // 368
+        //        var code = await _userManager.GenerateEmailConfirmationTokenAsync(user); // 369
+
+        //        code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code)); // 370, 371
+
+        //        var callbackUrl = Url.Page( // 372
+        //            "/Account/ConfirmEmail", // 373
+        //            pageHandler: null, // 373
+        //            values: new { area = "Identity", userId = userId, code = code, returnUrl = returnUrl }, // 375
+        //            protocol: Request.Scheme); // 376
+
+        //        await _emailSender.SendEmailAsync(Input.Email, "Confirm your email", // 378
+        //            $"Please confirm your account by clicking here."); // 379, 380
+
+        //        if (_userManager.Options.SignIn.RequireConfirmedAccount) // 383
+        //        {
+        //            return RedirectToPage("RegisterConfirmation", new { email = Input.Email, returnUrl = returnUrl }); // 384, 385
+        //        }
+        //        else
+        //        {
+        //            await _signInManager.SignInAsync(user, isPersistent: false); // 388, 387
+        //            return LocalRedirect(returnUrl); // 389
+        //        }
+        //    }
+
+        //    // Logica pentru afișarea erorilor în caz de eșec (Pasul 20 nu includea această parte, dar este necesară)
+        //    foreach (var error in result.Errors)
+        //    {
+        //        ModelState.AddModelError(string.Empty, error.Description);
+        //    }
+
+        //    return Page(); // 392
+
+
+        //}
+
+        //private IdentityUser CreateUser()
+        //{
+        //    try
+        //    {
+        //        return Activator.CreateInstance<IdentityUser>();
+        //    }
+        //    catch
+        //    {
+        //        throw new InvalidOperationException($"Can't create an instance of '{nameof(IdentityUser)}'. " +
+        //            $"Ensure that '{nameof(IdentityUser)}' is not an abstract class and has a parameterless constructor, or alternatively " +
+        //            $"override the register page in /Areas/Identity/Pages/Account/Register.cshtml");
+        //    }
+        //}
+        //private IUserEmailStore<IdentityUser> GetEmailStore()
+        //{
+        //    if (!_userManager.SupportsUserEmail)
+        //    {
+        //        throw new NotSupportedException("The default UI requires a user store with email support.");
+        //    }
+        //    return (IUserEmailStore<IdentityUser>)_userStore;
+        //}
+
+        public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
         {
-            returnUrl ??= Url.Content("~/"); // 353
+            returnUrl ??= Url.Content("~/");
+            ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
 
-            ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList(); // 352
-
-            var user = CreateUser(); // 354
-
-            await _userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None); // 355, 356
-            await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None); // 357, 358
-
-            var result = await _userManager.CreateAsync(user, Input.Password); // 359, 360
-
-            Member.Email = Input.Email; // 361
-            _context.Member.Add(Member); // 362
-            await _context.SaveChangesAsync(); // 363
-
-            if (result.Succeeded) // 364
+            if (ModelState.IsValid)
             {
-                _logger.LogInformation("User created a new account with password."); // 367
+                // 1. Încercăm să creăm utilizatorul Identity
+                var user = new IdentityUser { UserName = Input.Email, Email = Input.Email };
+                var result = await _userManager.CreateAsync(user, Input.Password);
 
-                var userId = await _userManager.GetUserIdAsync(user); // 368
-                var code = await _userManager.GenerateEmailConfirmationTokenAsync(user); // 369
-
-                code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code)); // 370, 371
-
-                var callbackUrl = Url.Page( // 372
-                    "/Account/ConfirmEmail", // 373
-                    pageHandler: null, // 373
-                    values: new { area = "Identity", userId = userId, code = code, returnUrl = returnUrl }, // 375
-                    protocol: Request.Scheme); // 376
-
-                await _emailSender.SendEmailAsync(Input.Email, "Confirm your email", // 378
-                    $"Please confirm your account by clicking here."); // 379, 380
-
-                if (_userManager.Options.SignIn.RequireConfirmedAccount) // 383
+                // Dacă Identity User a fost creat cu SUCCES
+                if (result.Succeeded)
                 {
-                    return RedirectToPage("RegisterConfirmation", new { email = Input.Email, returnUrl = returnUrl }); // 384, 385
+                    _logger.LogInformation("User created a new account with password.");
+
+                    // Adaugă utilizatorul în rolul "User"
+                    await _userManager.AddToRoleAsync(user, "User");
+
+                    // 2. SALVAREA MODELULUI MEMBER (ACUM este ordinea corectă)
+                    try
+                    {
+                        // Deoarece alte câmpuri (FirstName, LastName, etc.) nu vin din formularul standard,
+                        // le setăm ca fiind null sau goale, PENTRU A EVITA EROAREA [Required].
+
+                        // Asigurăm că Email-ul din Member este setat
+                        Member.Email = Input.Email;
+
+                        // Dacă nu aveți câmpurile Member în formular, probabil Member este NULL
+                        // Soluție rapidă: Inițializăm un membru nou, punem doar email-ul
+                        var newMember = new Member { Email = Input.Email };
+
+                        // Dacă Member are [Required] pentru alte câmpuri, această secțiune va trebui ajustată.
+                        _context.Member.Add(newMember);
+                        await _context.SaveChangesAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        // Aceasta prinde eroarea de validare a modelului Member!
+                        _logger.LogError($"Eroare la salvarea modelului Member pentru {Input.Email}: {ex.Message}");
+                        // ATENȚIE: Dacă salvarea Member eșuează, utilizatorul Identity a fost deja creat!
+                        // Pentru curățenie, ar trebui șters (sau lăsat și investigat manual).
+                        // Momentan, doar afișăm eroarea.
+                        ModelState.AddModelError(string.Empty, "Eroare la salvarea detaliilor membrului în baza de date.");
+                        await _userManager.DeleteAsync(user); // Șterge utilizatorul Identity creat anterior
+                        return Page();
+                    }
+
+
+                    // 3. Loghează utilizatorul și redirecționează
+                    await _signInManager.SignInAsync(user, isPersistent: false);
+                    return LocalRedirect(returnUrl);
                 }
-                else
+
+                // 4. Dacă Identity User eșuează (parolă slabă, email duplicat, etc.), adaugă erorile
+                foreach (var error in result.Errors)
                 {
-                    await _signInManager.SignInAsync(user, isPersistent: false); // 388, 387
-                    return LocalRedirect(returnUrl); // 389
+                    ModelState.AddModelError(string.Empty, error.Description);
                 }
             }
 
-            // Logica pentru afișarea erorilor în caz de eșec (Pasul 20 nu includea această parte, dar este necesară)
-            foreach (var error in result.Errors)
-            {
-                ModelState.AddModelError(string.Empty, error.Description);
-            }
-
-            return Page(); // 392
-
-
+            // Dacă ajungem aici (ModelState invalid sau Identity/Member eșuează), reafișăm formularul
+            return Page();
         }
 
-        private IdentityUser CreateUser()
-        {
-            try
-            {
-                return Activator.CreateInstance<IdentityUser>();
-            }
-            catch
-            {
-                throw new InvalidOperationException($"Can't create an instance of '{nameof(IdentityUser)}'. " +
-                    $"Ensure that '{nameof(IdentityUser)}' is not an abstract class and has a parameterless constructor, or alternatively " +
-                    $"override the register page in /Areas/Identity/Pages/Account/Register.cshtml");
-            }
-        }
         private IUserEmailStore<IdentityUser> GetEmailStore()
         {
             if (!_userManager.SupportsUserEmail)
@@ -333,6 +408,5 @@ _context;
             }
             return (IUserEmailStore<IdentityUser>)_userStore;
         }
-
-}
+    }
 }
